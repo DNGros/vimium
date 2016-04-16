@@ -404,7 +404,7 @@ class AlphabetHints
     hints = mostClickableLinks
     # if more links than we have defaults, need to generate the extras
     if(mostClickableLinks.length < linkCount)
-      backups = ["w","e","o","n","v","n","x","c","z"] # use these appended with home row
+      backups = ["w","e","o","n","v","x","c","z"] # use these appended with home row
       stillNeed = linkCount - mostClickableLinks.length
       for b in backups
         for mI in [0 .. 7]
