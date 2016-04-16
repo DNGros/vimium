@@ -70,6 +70,9 @@ HintCoordinator =
     # place, then Vimium blocks.  As a temporary measure, we install a timer to remove it.
     Utils.setTimeout 1000, -> suppressKeyboardEvents.exit() if suppressKeyboardEvents?.modeIsActive
     @onExit = [onExit]
+
+    console.log("prepareToActivateMode")
+
     @sendMessage "prepareToActivateMode", modeIndex: availableModes.indexOf mode
 
   # Hint descriptors are global.  They include all of the information necessary for each frame to determine
@@ -82,7 +85,9 @@ HintCoordinator =
     DomUtils.documentReady => Settings.onLoaded =>
       requireHref = availableModes[modeIndex] in [COPY_LINK_URL, OPEN_INCOGNITO]
       @localHints = LocalHints.getLocalHints requireHref
-      @localHintDescriptors = @localHints.map ({linkText}, localIndex) -> {frameId, localIndex, linkText}
+      for e in @localHints
+        console.log "HERE " + e.score
+      @localHintDescriptors = @localHints.map ({linkText, score}, localIndex) -> {frameId, localIndex, linkText, score}
       @sendMessage "postHintDescriptors", hintDescriptors: @localHintDescriptors
 
   # We activate LinkHintsMode() in every frame and provide every frame with exactly the same hint descriptors.
@@ -91,8 +96,14 @@ HintCoordinator =
   activateMode: ({hintDescriptors, modeIndex, originatingFrameId}) ->
     # We do not receive the frame's own hint descritors back from the background page.  Instead, we merge them
     # with the hint descriptors from other frames here.
+
+    console.log("ACTIVATE" + JSON.stringify(hintDescriptors))
+
     [hintDescriptors[frameId], @localHintDescriptors] = [@localHintDescriptors, null]
     hintDescriptors = [].concat (hintDescriptors[fId] for fId in (fId for own fId of hintDescriptors).sort())...
+
+    console.log("ACTIVate" + JSON.stringify(hintDescriptors))
+
     # Ensure that the document is ready and that the settings are loaded.
     DomUtils.documentReady => Settings.onLoaded =>
       @suppressKeyboardEvents.exit() if @suppressKeyboardEvents?.modeIsActive
@@ -150,7 +161,7 @@ class LinkHintsMode
     @stableSortCount = 0
     @hintMarkers = (@createMarkerFor desc for desc in hintDescriptors)
     @markerMatcher = new (if Settings.get "filterLinkHints" then FilterHints else AlphabetHints)
-    @markerMatcher.fillInMarkers @hintMarkers
+    @markerMatcher.fillInMarkers @hintMarkers, hintDescriptors
 
     @hintMode = new Mode
       name: "hint/#{@mode.name}"
@@ -380,11 +391,12 @@ class AlphabetHints
     @useKeydown = /^[a-z0-9]*$/.test @linkHintCharacters
     @hintKeystrokeQueue = []
 
-  fillInMarkers: (hintMarkers) ->
+  fillInMarkers: (hintMarkers, linkDiscriptors) ->
     hintStrings = @hintStrings(hintMarkers.length)
     for marker, idx in hintMarkers
       marker.hintString = hintStrings[idx]
-      marker.innerHTML = spanWrap(marker.hintString.toUpperCase()) if marker.isLocalMarker
+      marker.innerHTML = spanWrap(marker.hintString.toUpperCase() + " " + \
+                                  linkDiscriptors[idx].score) if marker.isLocalMarker
 
   #
   # Returns a list of hint strings which will uniquely identify the given number of links. The hint strings
@@ -641,7 +653,13 @@ LocalHints =
     if isClickable
       clientRect = DomUtils.getVisibleClientRect element, true
       if clientRect != null
-        visibleElements.push {element: element, rect: clientRect, secondClassCitizen: onlyHasTabIndex,
+        # Now that we have identified a viable thing to click let's assign it a score that can
+        # later on we can rank our link-hints
+        console.log MyTag: element.tagName,
+                    ParentTag:element.parentElement.tagName,
+                    yVal: clientRect.top
+        score = clientRect.top
+        visibleElements.push {element: element, score: score, rect: clientRect, secondClassCitizen: onlyHasTabIndex,
           possibleFalsePositive, reason}
 
     visibleElements
