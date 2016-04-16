@@ -677,12 +677,12 @@ LocalHints =
         linkImportanceScore += (1-(clientRect.left / window.innerWidth)) * 400
         # award points depending on what kind element this is
         linkImportanceScore += switch tagName
-          when "a" then 300
+          when "a" then 500
           when "h1" then 1500
           when "h2" then 1400
           when "h3" then 1300
           when "input" then 3000
-          when "button" then 500
+          when "button" then 700
           when "body" then -500
           else 0
         # award points based off parent tag
@@ -695,7 +695,8 @@ LocalHints =
           when "button" then 0
           else 0
         # award points for height
-        linkImportanceScore += clientRect.height * 2
+        if tagName is "img"
+          linkImportanceScore += clientRect.height * 2
         
         visibleElements.push {element: element, linkImportanceScore: linkImportanceScore, \
           rect: clientRect, secondClassCitizen: onlyHasTabIndex, possibleFalsePositive, reason}
