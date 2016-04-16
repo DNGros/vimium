@@ -156,7 +156,7 @@ class LinkHintsMode
     @stableSortCount = 0
     @hintMarkers = (@createMarkerFor desc for desc in hintDescriptors)
     @markerMatcher = new (if Settings.get "filterLinkHints" then FilterHints else AlphabetHints)
-    @markerMatcher.fillInMarkers @hintMarkers, hintDescriptors
+    @markerMatcher.fillInMarkers @hintMarkers
 
     @hintMode = new Mode
       name: "hint/#{@mode.name}"
@@ -205,6 +205,7 @@ class LinkHintsMode
         el.rect = localHintDescriptor.rect
         el.style.left = el.rect.left + "px"
         el.style.top = el.rect.top  + "px"
+        el.linkImportanceScore = desc.linkImportanceScore
         extend el,
           className: "vimiumReset internalVimiumHintMarker vimiumHintMarker"
           showLinkText: localHintDescriptor.showLinkText
@@ -386,14 +387,17 @@ class AlphabetHints
     @useKeydown = /^[a-z0-9]*$/.test @linkHintCharacters
     @hintKeystrokeQueue = []
 
-  fillInMarkers: (hintMarkers, linkDiscriptors) ->
+  fillInMarkers: (hintMarkers) ->
     hintStrings = @orderedHintStrings(hintMarkers.length)
     console.log "hint strings = " + hintStrings
+    # Sort the hintMarkers in order of score
+    hintMarkers.sort (a,b) -> b.linkImportanceScore - a.linkImportanceScore
+                
     for marker, idx in hintMarkers
       marker.hintString = hintStrings[idx]
       console.log "my hint string " + marker.hintString
       marker.innerHTML = spanWrap(marker.hintString.toUpperCase() + " " + \
-                                  linkDiscriptors[idx].linkImportanceScore) if marker.isLocalMarker
+                                  Math.floor marker.linkImportanceScore) if marker.isLocalMarker
 
   #
   # Returns [linkCount] hint-strings uniquely identifying each link in order of complexity
@@ -405,7 +409,7 @@ class AlphabetHints
     hints = mostClickableLinks
     # if more links than we have defaults, need to generate the extras
     if(mostClickableLinks.length < linkCount)
-      backups = ["W","E","O","N"] # use these appended with hoomerow
+      backups = ["W","E","O","N"] # use these appended with home row
       stillNeed = linkCount - mostClickableLinks.length
       for b in backups
         for mI in [0 .. 8]
@@ -672,9 +676,12 @@ LocalHints =
         # Now that we have identified a viable thing to click let's assign it a importance score that
         # can later on we can rank our link-hints
         #console.log MyTag: element.tagName,
-         #           ParentTag:element.parentElement.tagName,
+           #        ParentTag:element.parentElement.tagName,
          #           yVal: clientRect.top
-        linkImportanceScore = clientRect.top
+        linkImportanceScore = 0
+        # award points for higher on the screen
+        linkImportanceScore = (1-(clientRect.top / window.innerHeight)) * 500
+        
         visibleElements.push {element: element, linkImportanceScore: linkImportanceScore, \
           rect: clientRect, secondClassCitizen: onlyHasTabIndex, possibleFalsePositive, reason}
 
