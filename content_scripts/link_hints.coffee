@@ -388,9 +388,10 @@ class AlphabetHints
     hintMarkers.sort (a,b) -> b.linkImportanceScore - a.linkImportanceScore
                 
     for marker, idx in hintMarkers
-      marker.hintString = hintStrings[idx]
-      # + " " + Math.floor marker.linkImportanceScore
-      marker.innerHTML = spanWrap(marker.hintString.toUpperCase()) if marker.isLocalMarker
+      if idx < hintStrings.length
+        marker.hintString = hintStrings[idx]
+        # + " " + Math.floor marker.linkImportanceScore
+        marker.innerHTML = spanWrap(marker.hintString.toUpperCase()) if marker.isLocalMarker
 
   #
   # Returns [linkCount] hint-strings uniquely identifying each link in order of complexity
@@ -403,7 +404,7 @@ class AlphabetHints
     hints = mostClickableLinks
     # if more links than we have defaults, need to generate the extras
     if(mostClickableLinks.length < linkCount)
-      backups = ["w","e","o","n"] # use these appended with home row
+      backups = ["w","e","o","n","v","n","x","c","z"] # use these appended with home row
       stillNeed = linkCount - mostClickableLinks.length
       for b in backups
         for mI in [0 .. 7]
