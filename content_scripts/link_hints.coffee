@@ -694,6 +694,8 @@ LocalHints =
           when "input" then 0
           when "button" then 0
           else 0
+        # award points for height
+        linkImportanceScore += clientRect.height * 2
         
         visibleElements.push {element: element, linkImportanceScore: linkImportanceScore, \
           rect: clientRect, secondClassCitizen: onlyHasTabIndex, possibleFalsePositive, reason}
