@@ -97,14 +97,8 @@ HintCoordinator =
   activateMode: ({hintDescriptors, modeIndex, originatingFrameId}) ->
     # We do not receive the frame's own hint descritors back from the background page.  Instead, we merge them
     # with the hint descriptors from other frames here.
-
-    console.log("ACTIVATE" + JSON.stringify(hintDescriptors))
-
     [hintDescriptors[frameId], @localHintDescriptors] = [@localHintDescriptors, null]
     hintDescriptors = [].concat (hintDescriptors[fId] for fId in (fId for own fId of hintDescriptors).sort())...
-
-    console.log("ACTIVate" + JSON.stringify(hintDescriptors))
-
     # Ensure that the document is ready and that the settings are loaded.
     DomUtils.documentReady => Settings.onLoaded =>
       @suppressKeyboardEvents.exit() if @suppressKeyboardEvents?.modeIsActive
@@ -393,12 +387,33 @@ class AlphabetHints
     @hintKeystrokeQueue = []
 
   fillInMarkers: (hintMarkers, linkDiscriptors) ->
-    hintStrings = @hintStrings(hintMarkers.length)
+    hintStrings = @orderedHintStrings(hintMarkers.length)
+    console.log "hint strings = " + hintStrings
     for marker, idx in hintMarkers
       marker.hintString = hintStrings[idx]
+      console.log "my hint string " + marker.hintString
       marker.innerHTML = spanWrap(marker.hintString.toUpperCase() + " " + \
                                   linkDiscriptors[idx].linkImportanceScore) if marker.isLocalMarker
 
+  #
+  # Returns [linkCount] hint-strings uniquely identifying each link in order of complexity
+  #
+  orderedHintStrings: (linkCount) ->
+    # baseLinkOrdering encodes link hint options in order of easiest to type first
+    # TODO(DNGros) move to settings
+    mostClickableLinks = ["F","J","K","L","G","H","A","S","D","UJ","IK","RF","TF","YJ"]
+    hints = mostClickableLinks
+    # if more links than we have defaults, need to generate the extras
+    if(mostClickableLinks.length < linkCount)
+      backups = ["W","E","O","N"] # use these appended with hoomerow
+      stillNeed = linkCount - mostClickableLinks.length
+      for b in backups
+        for mI in [0 .. 8]
+          hints.push(b + mostClickableLinks[mI])
+          stillNeed--
+        if stillNeed <= 0
+          return hints
+    return hints
   #
   # Returns a list of hint strings which will uniquely identify the given number of links. The hint strings
   # may be of different lengths.
@@ -656,9 +671,9 @@ LocalHints =
       if clientRect != null
         # Now that we have identified a viable thing to click let's assign it a importance score that
         # can later on we can rank our link-hints
-        console.log MyTag: element.tagName,
-                    ParentTag:element.parentElement.tagName,
-                    yVal: clientRect.top
+        #console.log MyTag: element.tagName,
+         #           ParentTag:element.parentElement.tagName,
+         #           yVal: clientRect.top
         linkImportanceScore = clientRect.top
         visibleElements.push {element: element, linkImportanceScore: linkImportanceScore, \
           rect: clientRect, secondClassCitizen: onlyHasTabIndex, possibleFalsePositive, reason}
