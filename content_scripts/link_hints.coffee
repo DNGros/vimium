@@ -292,7 +292,6 @@ class LinkHintsMode
 
   updateKeyState: ({hintKeystrokeQueue, linkTextKeystrokeQueue, tabCount}) ->
     extend @markerMatcher, {hintKeystrokeQueue, linkTextKeystrokeQueue}
-
     {linksMatched, userMightOverType} = @markerMatcher.getMatchingHints @hintMarkers, tabCount
     if linksMatched.length == 0
       @deactivateMode()
@@ -399,14 +398,15 @@ class AlphabetHints
   orderedHintStrings: (linkCount) ->
     # baseLinkOrdering encodes link hint options in order of easiest to type first
     # TODO(DNGros) move to settings
-    mostClickableLinks = ["S","D","F","G","H","J","K","L","AF","UJ","IK","RF","TF","YJ"]
+    mostClickableLinks = ["s","d","f","g","h","j","k","l","rf","tf","yj", \ 
+                          "uj","as","ad","af","aj","ak"]
     hints = mostClickableLinks
     # if more links than we have defaults, need to generate the extras
     if(mostClickableLinks.length < linkCount)
-      backups = ["W","E","O","N"] # use these appended with home row
+      backups = ["w","e","o","n"] # use these appended with home row
       stillNeed = linkCount - mostClickableLinks.length
       for b in backups
-        for mI in [0 .. 8]
+        for mI in [0 .. 7]
           hints.push(b + mostClickableLinks[mI])
           stillNeed--
         if stillNeed <= 0
@@ -430,7 +430,6 @@ class AlphabetHints
 
   getMatchingHints: (hintMarkers) ->
     matchString = @hintKeystrokeQueue.join ""
-    console.log "filter filter "
     linksMatched: hintMarkers.filter (linkMarker) -> linkMarker.hintString.startsWith matchString
 
   pushKeyChar: (keyChar, keydownKeyChar) ->
@@ -680,8 +679,8 @@ LocalHints =
           when "a" then 300
           when "h1" then 1500
           when "h2" then 1400
-          when "h3" then 1300 #1600
-          when "input" then 1000
+          when "h3" then 1300
+          when "input" then 3000
           when "button" then 500
           when "body" then -500
           else 0
