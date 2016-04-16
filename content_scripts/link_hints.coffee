@@ -70,9 +70,6 @@ HintCoordinator =
     # place, then Vimium blocks.  As a temporary measure, we install a timer to remove it.
     Utils.setTimeout 1000, -> suppressKeyboardEvents.exit() if suppressKeyboardEvents?.modeIsActive
     @onExit = [onExit]
-
-    console.log("prepareToActivateMode")
-
     @sendMessage "prepareToActivateMode", modeIndex: availableModes.indexOf mode
 
   # Hint descriptors are global.  They include all of the information necessary for each frame to determine
@@ -85,8 +82,6 @@ HintCoordinator =
     DomUtils.documentReady => Settings.onLoaded =>
       requireHref = availableModes[modeIndex] in [COPY_LINK_URL, OPEN_INCOGNITO]
       @localHints = LocalHints.getLocalHints requireHref
-      for e in @localHints
-        console.log "HERE " + e.linkImportanceScore
       @localHintDescriptors = @localHints.map ({linkText, linkImportanceScore}, localIndex) ->
                                               {frameId, localIndex, linkText, linkImportanceScore}
       @sendMessage "postHintDescriptors", hintDescriptors: @localHintDescriptors
@@ -395,9 +390,8 @@ class AlphabetHints
                 
     for marker, idx in hintMarkers
       marker.hintString = hintStrings[idx]
-      console.log "my hint string " + marker.hintString
-      marker.innerHTML = spanWrap(marker.hintString.toUpperCase() + " " + \
-                                  Math.floor marker.linkImportanceScore) if marker.isLocalMarker
+      # + " " + Math.floor marker.linkImportanceScore
+      marker.innerHTML = spanWrap(marker.hintString.toUpperCase()) if marker.isLocalMarker
 
   #
   # Returns [linkCount] hint-strings uniquely identifying each link in order of complexity
@@ -405,7 +399,7 @@ class AlphabetHints
   orderedHintStrings: (linkCount) ->
     # baseLinkOrdering encodes link hint options in order of easiest to type first
     # TODO(DNGros) move to settings
-    mostClickableLinks = ["F","J","K","L","G","H","A","S","D","UJ","IK","RF","TF","YJ"]
+    mostClickableLinks = ["S","D","F","G","H","J","K","L","AF","UJ","IK","RF","TF","YJ"]
     hints = mostClickableLinks
     # if more links than we have defaults, need to generate the extras
     if(mostClickableLinks.length < linkCount)
@@ -436,6 +430,7 @@ class AlphabetHints
 
   getMatchingHints: (hintMarkers) ->
     matchString = @hintKeystrokeQueue.join ""
+    console.log "filter filter "
     linksMatched: hintMarkers.filter (linkMarker) -> linkMarker.hintString.startsWith matchString
 
   pushKeyChar: (keyChar, keydownKeyChar) ->
@@ -675,12 +670,30 @@ LocalHints =
       if clientRect != null
         # Now that we have identified a viable thing to click let's assign it a importance score that
         # can later on we can rank our link-hints
-        #console.log MyTag: element.tagName,
-           #        ParentTag:element.parentElement.tagName,
-         #           yVal: clientRect.top
+        console.log "t " + element.tagName + " P " + element.parentElement.tagName
         linkImportanceScore = 0
-        # award points for higher on the screen
-        linkImportanceScore = (1-(clientRect.top / window.innerHeight)) * 500
+        # award points for higher and lefter on the screen
+        linkImportanceScore += (1-(clientRect.top / window.innerHeight)) * 600
+        linkImportanceScore += (1-(clientRect.left / window.innerWidth)) * 400
+        # award points depending on what kind element this is
+        linkImportanceScore += switch tagName
+          when "a" then 300
+          when "h1" then 1500
+          when "h2" then 1400
+          when "h3" then 1300 #1600
+          when "input" then 1000
+          when "button" then 500
+          when "body" then -500
+          else 0
+        # award points based off parent tag
+        linkImportanceScore += switch element.parentElement.tagName.toLowerCase()
+          when "a" then -100
+          when "h1" then 2000
+          when "h2" then 1800
+          when "h3" then 1600
+          when "input" then 0
+          when "button" then 0
+          else 0
         
         visibleElements.push {element: element, linkImportanceScore: linkImportanceScore, \
           rect: clientRect, secondClassCitizen: onlyHasTabIndex, possibleFalsePositive, reason}
