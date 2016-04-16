@@ -86,8 +86,9 @@ HintCoordinator =
       requireHref = availableModes[modeIndex] in [COPY_LINK_URL, OPEN_INCOGNITO]
       @localHints = LocalHints.getLocalHints requireHref
       for e in @localHints
-        console.log "HERE " + e.score
-      @localHintDescriptors = @localHints.map ({linkText, score}, localIndex) -> {frameId, localIndex, linkText, score}
+        console.log "HERE " + e.linkImportanceScore
+      @localHintDescriptors = @localHints.map ({linkText, linkImportanceScore}, localIndex) ->
+                                              {frameId, localIndex, linkText, linkImportanceScore}
       @sendMessage "postHintDescriptors", hintDescriptors: @localHintDescriptors
 
   # We activate LinkHintsMode() in every frame and provide every frame with exactly the same hint descriptors.
@@ -396,7 +397,7 @@ class AlphabetHints
     for marker, idx in hintMarkers
       marker.hintString = hintStrings[idx]
       marker.innerHTML = spanWrap(marker.hintString.toUpperCase() + " " + \
-                                  linkDiscriptors[idx].score) if marker.isLocalMarker
+                                  linkDiscriptors[idx].linkImportanceScore) if marker.isLocalMarker
 
   #
   # Returns a list of hint strings which will uniquely identify the given number of links. The hint strings
@@ -653,14 +654,14 @@ LocalHints =
     if isClickable
       clientRect = DomUtils.getVisibleClientRect element, true
       if clientRect != null
-        # Now that we have identified a viable thing to click let's assign it a score that can
-        # later on we can rank our link-hints
+        # Now that we have identified a viable thing to click let's assign it a importance score that
+        # can later on we can rank our link-hints
         console.log MyTag: element.tagName,
                     ParentTag:element.parentElement.tagName,
                     yVal: clientRect.top
-        score = clientRect.top
-        visibleElements.push {element: element, score: score, rect: clientRect, secondClassCitizen: onlyHasTabIndex,
-          possibleFalsePositive, reason}
+        linkImportanceScore = clientRect.top
+        visibleElements.push {element: element, linkImportanceScore: linkImportanceScore, \
+          rect: clientRect, secondClassCitizen: onlyHasTabIndex, possibleFalsePositive, reason}
 
     visibleElements
 
