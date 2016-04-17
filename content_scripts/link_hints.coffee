@@ -404,7 +404,7 @@ class AlphabetHints
     hints = mostClickableLinks
     # if more links than we have defaults, need to generate the extras
     if(mostClickableLinks.length < linkCount)
-      backups = ["w","e","o","n","v","x","c","z","m","q"] # use these appended with home row
+      backups = ["b","i","w","e","o","n","v","x","c","z","m","q"] # use these appended with home row
       stillNeed = linkCount - mostClickableLinks.length
       for b in backups
         for mI in [0 .. 7]
@@ -669,13 +669,13 @@ LocalHints =
       clientRect = DomUtils.getVisibleClientRect element, true
       if clientRect != null
         # Now that we have identified a viable thing to click let's assign it a importance score that
-        # can later on we can rank our link-hints
+        # can later on we can rank our link-hints.
         console.log "t " + element.tagName + " P " + element.parentElement.tagName
         linkImportanceScore = 0
-        # award points for higher and lefter on the screen
+        # Award points for higher and lefter on the screen
         linkImportanceScore += (1-(clientRect.top / window.innerHeight)) * 600
         linkImportanceScore += (1-(clientRect.left / window.innerWidth)) * 400
-        # award points depending on what kind element this is
+        # Award points depending on what kind element this is
         linkImportanceScore += switch tagName
           when "a" then 500
           when "h1" then 1500
@@ -685,7 +685,7 @@ LocalHints =
           when "button" then 700
           when "body" then -500
           else 0
-        # award points based off parent tag
+        # Award points based off parent tag
         linkImportanceScore += switch element.parentElement.tagName.toLowerCase()
           when "a" then -100
           when "h1" then 2000
@@ -693,6 +693,9 @@ LocalHints =
           when "h3" then 1600
           when "input" then 0
           when "button" then 0
+          when "li" then -200
+          when "p" then 200
+          when "strong" then 1000
           else 0
         # award points for height
         if tagName is "img"
