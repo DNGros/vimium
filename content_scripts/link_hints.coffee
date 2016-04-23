@@ -385,11 +385,16 @@ class AlphabetHints
     hintStrings = @orderedHintStrings(hintMarkers.length)
     console.log "hint strings = " + hintStrings
     # Sort the hintMarkers in order of score
-    hintMarkers.sort (a,b) -> b.linkImportanceScore - a.linkImportanceScore
-                
+    #hintMarkers.sort (a,b) -> b.linkImportanceScore - a.linkImportanceScore
+    
+    # Create a huffman tree based off scores using lib/hint_utils and use it to assign
+    # link hints to the markers.
+    tree = HintUtils.createHuffmanTree(hintMarkers, @linkHintCharacters.length, {})
+    tree.assignCodeWords(@linkHintCharacters, (marker, hint) -> marker.hintString = hint)
+    
     for marker, idx in hintMarkers
       if idx < hintStrings.length
-        marker.hintString = hintStrings[idx]
+        #marker.hintString = hintStrings[idx]
         # + " " + Math.floor marker.linkImportanceScore
         marker.innerHTML = spanWrap(marker.hintString.toUpperCase()) if marker.isLocalMarker
 

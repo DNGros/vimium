@@ -10,6 +10,7 @@
     "scripts": [
       "lib/utils.js",
       "lib/settings.js",
+      "lib/hint_utils.js",
       "background_scripts/bg_utils.js",
       "background_scripts/commands.js",
       "lib/clipboard.js",
@@ -39,6 +40,7 @@
       "js": ["lib/utils.js",
              "lib/keyboard_utils.js",
              "lib/dom_utils.js",
+             "lib/hint_utils.js",
              "lib/rect.js",
              "lib/handler_stack.js",
              "lib/settings.js",

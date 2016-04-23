@@ -1,0 +1,119 @@
+# This module defines some helpful utilities for creating link hints.
+# It defines a method for creating a huffman coding for making sure there
+# is a unique, prefix-free collection of hints for the link-hints
+HintUtils = 
+  ###
+  # n-ary-huffman Copyright 2014, 2015 Simon Lydell
+  # X11 (“MIT”) Licensed. (See LICENSE.)
+  ###
+  createHuffmanTree: (elements, numBranches, options={})->
+    unless numBranches >= 2
+      throw new RangeError("`n` must be at least 2")
+
+    numElements = elements.length
+
+    # Special cases.
+    if numElements == 0
+      return new BranchPoint([], 0)
+    if numElements == 1
+      [element] = elements
+      return new BranchPoint([element], element.linkImportanceScore)
+
+    unless options.sorted
+      # Sort the elements after their weights, in ascending order, so that the
+      # first ones will be the ones with lowest weight. This is done on a shallow
+      # working copy in order not to modify the original array.
+      elements = elements[..].sort((a, b)-> a.linkImportanceScore - \
+                                   b.linkImportanceScore)
+
+    # A `numBranches`-ary tree can be formed by `1 + (numBranches - 1) * n`
+    # elements: There is the root of the tree (`1`), and each branch point adds
+    # `numBranches` elements to the total number or elements, but replaces itself
+    # (`numBranches - 1`). `n` is the number of points where the tree branches
+    # (therefore, `n` is an integer). In order to create the tree using
+    # `numElements` elements, we need to find the smallest `n` such that `1 +
+    # (numBranches - 1) * n == numElements + padding`. We need to add `padding`
+    # since `n` is an integer and there might not be an integer `n` that makes
+    # the left-hand side equal to `numElements`. Solving for `padding` gives
+    # `padding = 1 + (numBranches - 1) * n - numElements`. Since `padding >= 0`
+    # (we won’t reduce the number of elements, only add extra dummy ones), it
+    # follows that `n >= (numElements - 1) / (numBranches - 1)`. The smallest
+    # integer `n = numBranchPoints` is then:
+    numBranchPoints = Math.ceil((numElements - 1) / (numBranches - 1))
+    # The above gives the padding:
+    numPadding = 1 + (numBranches - 1) * numBranchPoints - numElements
+
+    # All the `numBranchPoints` branch points will be stored in this array instead
+    # of splicing them into the `elements` array. This way we do not need to
+    # search for the correct index to maintain the sort order. This array, and all
+    # other below, are created with the correct length from the beginning for
+    # performance.
+    branchPoints = Array(numBranchPoints)
+
+    # These indexes will be used instead of pushing, popping, shifting and
+    # unshifting arrays for performance.
+    latestBranchPointIndex = 0
+    branchPointIndex       = 0
+    elementIndex           = 0
+
+    # The first branch point is the only one that can have fewer than
+    # `numBranches` branches. One _could_ add `numPadding` dummy elements, but
+    # this algorithm does not. (Why would that be useful?)
+    if numPadding > 0
+      elementIndex = numBranches - numPadding
+      weight = 0
+      children = Array(elementIndex)
+      childIndex = 0
+      while childIndex < elementIndex
+        element = elements[childIndex]
+        children[childIndex] = element
+        weight += element.linkImportanceScore
+        childIndex++
+      branchPoints[0] = new BranchPoint(children, weight)
+      latestBranchPointIndex = 1
+
+    # Create (the rest of) the `numBranchPoints` branch points.
+    nextElement = elements[elementIndex]
+    while latestBranchPointIndex < numBranchPoints
+      weight = 0
+      children = Array(numBranches)
+      childIndex = 0
+      nextBranchPoint = branchPoints[branchPointIndex]
+      # Put the next `numBranches` smallest weights in the `children` array.
+      while childIndex < numBranches
+        # The smallest weight is either the next element or the next branch point.
+        if not nextElement? or # No elements, only branch points left.
+           (nextBranchPoint? and nextBranchPoint.linkImportanceScore <= \
+                                  nextElement.linkImportanceScore)
+          lowestWeight = nextBranchPoint
+          branchPointIndex++
+          nextBranchPoint = branchPoints[branchPointIndex]
+        else
+          lowestWeight = nextElement
+          elementIndex++
+          nextElement = elements[elementIndex]
+        children[childIndex] = lowestWeight
+        weight += lowestWeight.linkImportanceScore
+        childIndex++
+      branchPoints[latestBranchPointIndex] = new BranchPoint(children, weight)
+      latestBranchPointIndex++
+
+    root = branchPoints[numBranchPoints - 1]
+    root
+
+class BranchPoint
+  constructor: (@children, @linkImportanceScore)->
+
+  assignCodeWords: (alphabet, callback, prefix="")->
+    index = 0
+    for node in @children by -1
+      codeWord = prefix + alphabet[index++]
+      if node instanceof BranchPoint
+        node.assignCodeWords(alphabet, callback, codeWord)
+      else
+        callback(node, codeWord)
+    return
+
+root = exports ? window
+root.HintUtils = HintUtils
+root.BranchPoint = BranchPoint
