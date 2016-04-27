@@ -382,21 +382,21 @@ class AlphabetHints
     @hintKeystrokeQueue = []
 
   fillInMarkers: (hintMarkers) ->
-    hintStrings = @orderedHintStrings(hintMarkers.length)
-    console.log "hint strings = " + hintStrings
+    #hintStrings = @orderedHintStrings(hintMarkers.length)
+    #console.log "hint strings = " + hintStrings
     # Sort the hintMarkers in order of score
     #hintMarkers.sort (a,b) -> b.linkImportanceScore - a.linkImportanceScore
-    
+    console.log("bloop");
     # Create a huffman tree based off scores using lib/hint_utils and use it to assign
     # link hints to the markers.
     tree = HintUtils.createHuffmanTree(hintMarkers, @linkHintCharacters.length, {})
     tree.assignCodeWords(@linkHintCharacters, (marker, hint) -> marker.hintString = hint)
     
     for marker, idx in hintMarkers
-      if idx < hintStrings.length
+      #if idx < hintStrings.length
         #marker.hintString = hintStrings[idx]
         # + " " + Math.floor marker.linkImportanceScore
-        marker.innerHTML = spanWrap(marker.hintString.toUpperCase()) if marker.isLocalMarker
+      marker.innerHTML = spanWrap(marker.hintString.toUpperCase()) if marker.isLocalMarker
 
   #
   # Returns [linkCount] hint-strings uniquely identifying each link in order of complexity

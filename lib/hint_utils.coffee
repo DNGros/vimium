@@ -6,6 +6,7 @@ HintUtils =
   # n-ary-huffman Copyright 2014, 2015 Simon Lydell
   # X11 (“MIT”) Licensed. (See LICENSE.)
   ###
+  # Usage info at github.com/lydell/n-ary-huffman
   createHuffmanTree: (elements, numBranches, options={})->
     unless numBranches >= 2
       throw new RangeError("`n` must be at least 2")
